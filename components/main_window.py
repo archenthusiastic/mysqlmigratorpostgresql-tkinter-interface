@@ -54,7 +54,7 @@ class MainWindow(QWidget):
             QMessageBox.critical(self, "Error", f"No se pudieron cargar las tablas: {e}")
 
     def load_table_data(self, table_name):
-        """Cargar los datos de la tabla seleccionada en el widget de la tabla."""
+        """Cargar los datos de la tabla seleccionada."""
         try:
             if not table_name:
                 return
@@ -70,73 +70,41 @@ class MainWindow(QWidget):
             for row_index, row in enumerate(rows):
                 for col_index, value in enumerate(row):
                     self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
-
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"No se pudieron cargar los datos de la tabla: {e}")
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar los datos: {e}")
 
     def add_record(self):
-        """Abrir diálogo para agregar un registro."""
         table_name = self.table_selector.currentText()
-        if not table_name:
-            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
-            return
-
         dialog = AddRecordDialog(self, table_name, self.postgres_conn, self.postgres_cursor)
         if dialog.exec():
-            self.load_table_data(table_name)  # Recargar datos después de agregar
+            self.load_table_data(table_name)
 
     def edit_record(self):
-        """Abrir diálogo para modificar un registro."""
         table_name = self.table_selector.currentText()
-        if not table_name:
-            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
-            return
-
         selected_row = self.table.currentRow()
         if selected_row == -1:
             QMessageBox.warning(self, "Error", "Selecciona un registro para modificar.")
             return
 
-        try:
-            record_id = self.table.item(selected_row, 0).text()  # Asume que la columna `id` está en la posición 0
-            if not record_id:
-                raise ValueError("El registro seleccionado no tiene un ID válido.")
-
-            dialog = EditRecordDialog(self, table_name, self.postgres_conn, self.postgres_cursor, record_id)
-            if dialog.exec():
-                self.load_table_data(table_name)  # Recargar datos después de modificar
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"No se pudo abrir el diálogo de edición: {e}")
+        record_id = self.table.item(selected_row, 0).text()  # Usa id_auto como columna clave
+        dialog = EditRecordDialog(self, table_name, self.postgres_conn, self.postgres_cursor, record_id)
+        if dialog.exec():
+            self.load_table_data(table_name)
 
     def delete_record(self):
-        """Eliminar el registro seleccionado."""
         table_name = self.table_selector.currentText()
-        if not table_name:
-            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
-            return
-
         selected_row = self.table.currentRow()
         if selected_row == -1:
             QMessageBox.warning(self, "Error", "Selecciona un registro para eliminar.")
             return
 
+        record_id = self.table.item(selected_row, 0).text()
         try:
-            record_id = self.table.item(selected_row, 0).text()  # Asume que la columna `id` está en la posición 0
-            if not record_id:
-                raise ValueError("El registro seleccionado no tiene un ID válido.")
-
-            confirmation = QMessageBox.question(
-                self,
-                "Confirmación",
-                f"¿Seguro que deseas eliminar el registro con ID {record_id}?",
-                QMessageBox.Yes | QMessageBox.No
-            )
-
+            confirmation = QMessageBox.question(self, "Confirmación", f"¿Eliminar registro {record_id}?", QMessageBox.Yes | QMessageBox.No)
             if confirmation == QMessageBox.Yes:
-                self.postgres_cursor.execute(f"DELETE FROM {table_name} WHERE id = %s", (record_id,))
+                self.postgres_cursor.execute(f"DELETE FROM {table_name} WHERE id_auto = %s", (record_id,))
                 self.postgres_conn.commit()
-                QMessageBox.information(self, "Éxito", "Registro eliminado con éxito.")
-                self.load_table_data(table_name)  # Recargar datos después de eliminar
+                self.load_table_data(table_name)
         except Exception as e:
             self.postgres_conn.rollback()
             QMessageBox.critical(self, "Error", f"No se pudo eliminar el registro: {e}")
