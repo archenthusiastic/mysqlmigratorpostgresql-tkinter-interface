@@ -96,6 +96,16 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 - El diseño cumple con la 3ra Forma Normal.
 - Las relaciones entre tablas son claras y bien definidas.
 
+- Un cliente puede tener múltiples ventas, pero una venta pertenece a un solo cliente.
+Autos y Ventas:
+
+- Un auto puede aparecer en múltiples ventas, pero cada venta registra un auto específico.
+Empleados y Servicios:
+
+- Un empleado puede encargarse de múltiples servicios, pero cada servicio está asignado a un único empleado.
+Proveedores:
+
+- Relación independiente para administrar información de proveedores. Puede ser extendida para conectar a Autos si los proveedores están relacionados con inventarios.
 ---
 
 ## Pruebas
