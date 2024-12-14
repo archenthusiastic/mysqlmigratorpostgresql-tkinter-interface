@@ -625,9 +625,3 @@ Si deseas contribuir:
 Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
 
 ---
-
-## Contacto
-
-Autor: [Tu Nombre]  
-Correo: [tu_email@example.com]  
-GitHub: [https://github.com/tu_usuario](https://github.com/tu_usuario)
