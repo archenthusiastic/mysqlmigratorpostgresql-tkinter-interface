@@ -142,15 +142,9 @@ gestion_bd/
 ```
 
 
-<h4 align="center">Estructura</h2>
+<h4 align="center">App</h2>
 
-  ```cpp
-from PySide6.QtWidgets import QApplication
-from components.login_form import LoginForm
-from db.db_conn import connect_mysql, connect_postgresql
-from db.migration import migrate_all_tables
-from components.main_window import MainWindow
-
+  ```python
 class App:
     def __init__(self):
         self.mysql_connected = False
@@ -170,128 +164,448 @@ if __name__ == "__main__":
 
 <h4 align="center">Funciones</h2>
 <details>
-<summary>Validar Fecha</summary>
+<summary>edit</summary>
   
-  ```cpp
-bool validarFecha(int anio, int mes, int dia) {
-    if(anio == 0) {
-        cout << "Year value is invalid: " << anio << endl;
-        return false;
-    }
-    if(mes < 1 || mes > 12 )
-    {
-        cout << "Month value is invalid: "<< mes << endl;
-        return false;
-    }
-    if (dia < 1 || dia > 31) 
-    {
-        cout << "Day value is invalid: "<<dia<<endl;
-        return false;
-    }
-    if(mes == 2) 
-    {
-        if(dia > 29)
-        {
-            cout << "Day value is invalid: "<< dia << endl;
-            return false;
-        }
-    }
-    else if(mes == 4 || mes == 6 || mes == 9 || mes == 11) 
-    {
-        if(dia > 30) {
-            cout << "Day value is invalid: "<< dia << endl;
-            return false;
-        }
-    }
-    return true;
-}
-```
+  ```python
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
+from PySide6.QtCore import Qt
 
-Basicamente mediante una funcion booleana dentro de funcionan agrego filtros en forma de sentencias que permiten detectar si una fecha no es valida es decir su formato es erroneo
+class EditRecordDialog(QDialog):
+    def __init__(self, parent, table_name, postgres_conn, postgres_cursor, record_id):
+        super().__init__(parent)
+        self.setWindowTitle(f"Modificar Registro en {table_name}")
+        self.setGeometry(300, 300, 400, 300)
+
+        self.table_name = table_name
+        self.postgres_conn = postgres_conn
+        self.postgres_cursor = postgres_cursor
+        self.record_id = record_id
+        self.fields = {}
+
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
+        layout.addLayout(form_layout)
+
+        try:
+            self.postgres_cursor.execute(f"""
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = '{table_name}' AND table_schema = 'public';
+            """)
+            columns = self.postgres_cursor.fetchall()
+
+            self.postgres_cursor.execute(f"SELECT * FROM {table_name} WHERE id = %s", (record_id,))
+            record = self.postgres_cursor.fetchone()
+
+            if record is None:
+                raise ValueError(f"No se encontró ningún registro con ID {record_id} en la tabla {table_name}.")
+
+            for index, (column_name, data_type) in enumerate(columns):
+                if column_name == "id":
+                    continue
+                field = QLineEdit(str(record[index]))
+                field.setPlaceholderText(f"Tipo: {data_type}")
+                form_layout.addRow(column_name, field)
+                self.fields[column_name] = field
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al cargar el registro: {e}")
+            self.reject()
+
+        button_layout = QHBoxLayout()
+        save_button = QPushButton("Guardar")
+        save_button.clicked.connect(self.save_record)
+        cancel_button = QPushButton("Cancelar")
+        cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(save_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+    def save_record(self):
+        try:
+            columns = list(self.fields.keys())
+            values = [field.text() for field in self.fields.values()]
+            set_clause = ", ".join([f"{col} = %s" for col in columns])
+
+            sql = f"UPDATE {self.table_name} SET {set_clause} WHERE id = %s"
+            self.postgres_cursor.execute(sql, values + [self.record_id])
+            self.postgres_conn.commit()
+
+            QMessageBox.information(self, "Éxito", "Registro modificado con éxito.")
+            self.accept()
+        except Exception as e:
+            self.postgres_conn.rollback()
+            QMessageBox.critical(self, "Error", f"No se pudo modificar el registro: {e}")
+
+```
 </details>
 
 <details>
-<summary>Contar Guiones</summary>
+<summary>Add</summary>
 
-  ```cpp
-int contarGuiones(const string& str) {
-    int count = 0;
-    for (char c : str) {
-        if (c == '-') {
-            count++;
-        }
-    }
-    return count;
-}
+  ```python
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
+from PySide6.QtCore import Qt
+
+class AddRecordDialog(QDialog):
+    def __init__(self, parent, table_name, postgres_conn, postgres_cursor):
+        super().__init__(parent)
+        self.setWindowTitle(f"Añadir Registro a {table_name}")
+        self.setGeometry(300, 300, 400, 300)
+
+        self.table_name = table_name
+        self.postgres_conn = postgres_conn
+        self.postgres_cursor = postgres_cursor
+        self.fields = {}
+
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
+        layout.addLayout(form_layout)
+
+        self.postgres_cursor.execute(f"""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = '{table_name}' AND table_schema = 'public';
+        """)
+        columns = self.postgres_cursor.fetchall()
+
+        for column_name, data_type in columns:
+            field = QLineEdit()
+            field.setPlaceholderText(f"Tipo: {data_type}")
+            form_layout.addRow(column_name, field)
+            self.fields[column_name] = field
+
+        button_layout = QHBoxLayout()
+        save_button = QPushButton("Guardar")
+        save_button.clicked.connect(self.save_record)
+        cancel_button = QPushButton("Cancelar")
+        cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(save_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+    def save_record(self):
+        try:
+            columns = list(self.fields.keys())
+            values = [field.text() for field in self.fields.values()]
+
+            placeholders = ", ".join(["%s"] * len(values))
+            columns_str = ", ".join(columns)
+            sql = f"INSERT INTO {self.table_name} ({columns_str}) VALUES ({placeholders})"
+
+            self.postgres_cursor.execute(sql, values)
+            self.postgres_conn.commit()
+
+            QMessageBox.information(self, "Exito", "Registro agregado con exito.")
+            self.accept()
+        except Exception as e:
+            self.postgres_conn.rollback()
+            QMessageBox.critical(self, "Error", f"No se pudo guardar el registro: {e}")
+
 ```
-
-Esta funcion me permite asegurarme que la fecha siga el formato year-moth-day
 </details>
 
 <details>
-<summary>formatearFecha</summary>
+<summary>login_form</summary>
 
-  ```cpp
-string formatearFecha(int anio, int mes, int dia) {
-    return to_string(anio) + "-" + (mes < 10 ? "0" : "") + to_string(mes) + "-" + (dia < 10 ? "0" : "") + to_string(dia);
-}
+  ```python
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QMessageBox
+from PySide6.QtCore import Qt
+from components.main_window import MainWindow
+from mysqlmigratorpostgresql import MysqlMigratorPostgresql
+
+class LoginForm(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Formulario de Conexión")
+        self.setGeometry(100, 100, 400, 500)
+
+        self.migrator = MysqlMigratorPostgresql()
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        title_label = QLabel("Conexión a MySQL y PostgreSQL")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title_label)
+
+        mysql_form = QFormLayout()
+        mysql_title = QLabel("MySQL")
+        mysql_title.setAlignment(Qt.AlignCenter)
+        mysql_title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        layout.addWidget(mysql_title)
+
+        self.mysql_host_input = QLineEdit()
+        self.mysql_host_input.setPlaceholderText("Host")
+        mysql_form.addRow("Host:", self.mysql_host_input)
+
+        self.mysql_port_input = QLineEdit()
+        self.mysql_port_input.setPlaceholderText("Port")
+        mysql_form.addRow("Port:", self.mysql_port_input)
+
+        self.mysql_user_input = QLineEdit()
+        self.mysql_user_input.setPlaceholderText("User")
+        mysql_form.addRow("User:", self.mysql_user_input)
+
+        self.mysql_password_input = QLineEdit()
+        self.mysql_password_input.setEchoMode(QLineEdit.Password)
+        self.mysql_password_input.setPlaceholderText("Password")
+        mysql_form.addRow("Password:", self.mysql_password_input)
+
+        self.mysql_database_input = QLineEdit()
+        self.mysql_database_input.setPlaceholderText("Database")
+        mysql_form.addRow("Database:", self.mysql_database_input)
+
+        layout.addLayout(mysql_form)
+
+        postgres_form = QFormLayout()
+        postgres_title = QLabel("PostgreSQL")
+        postgres_title.setAlignment(Qt.AlignCenter)
+        postgres_title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        layout.addWidget(postgres_title)
+
+        self.postgres_host_input = QLineEdit()
+        self.postgres_host_input.setPlaceholderText("Host")
+        postgres_form.addRow("Host:", self.postgres_host_input)
+
+        self.postgres_port_input = QLineEdit()
+        self.postgres_port_input.setPlaceholderText("Port")
+        postgres_form.addRow("Port:", self.postgres_port_input)
+
+        self.postgres_user_input = QLineEdit()
+        self.postgres_user_input.setPlaceholderText("User")
+        postgres_form.addRow("User:", self.postgres_user_input)
+
+        self.postgres_password_input = QLineEdit()
+        self.postgres_password_input.setEchoMode(QLineEdit.Password)
+        self.postgres_password_input.setPlaceholderText("Password")
+        postgres_form.addRow("Password:", self.postgres_password_input)
+
+        self.postgres_database_input = QLineEdit()
+        self.postgres_database_input.setPlaceholderText("Database")
+        postgres_form.addRow("Database:", self.postgres_database_input)
+
+        layout.addLayout(postgres_form)
+
+        self.connect_button = QPushButton("Conectar y Migrar")
+        self.connect_button.setStyleSheet("padding: 10px; font-size: 14px;")
+        self.connect_button.clicked.connect(self.migrate_and_connect)
+        layout.addWidget(self.connect_button, alignment=Qt.AlignCenter)
+
+    def migrate_and_connect(self):
+        try:
+            self.migrator.connect_mysql(
+                host=self.mysql_host_input.text(),
+                port=int(self.mysql_port_input.text()),
+                user=self.mysql_user_input.text(),
+                password=self.mysql_password_input.text(),
+                database=self.mysql_database_input.text()
+            )
+            QMessageBox.information(self, "Conexión MySQL", "Conexión a MySQL exitosa.")
+
+            self.migrator.connect_postgresql(
+                host=self.postgres_host_input.text(),
+                port=int(self.postgres_port_input.text()),
+                user=self.postgres_user_input.text(),
+                password=self.postgres_password_input.text(),
+                database=self.postgres_database_input.text()
+            )
+            QMessageBox.information(self, "Conexión PostgreSQL", "Conexión a PostgreSQL exitosa.")
+
+            self.migrator.migrate_all()
+            QMessageBox.information(self, "Migración", "Migración completada con éxito.")
+
+            postgres_conn = self.migrator.postgres_conn
+            postgres_cursor = self.migrator.postgres_cursor
+
+            self.main_window = MainWindow(postgres_conn, postgres_cursor)
+            self.main_window.show()
+            self.close()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error durante la conexión o migración: {e}")
+
 ```
-
-Esta funcion me permite agregar los 0 que faltan a la fecha
 </details>
 
 <details>
-  <summary>insertarEventoEnOrden</summary>
+  <summary>main window</summary>
 
   ```cpp
-void insertarEventoEnOrden(vector<string>& eventos, const string& evento) {
-    auto it = eventos.begin();
-    while (it != eventos.end() && *it < evento) {
-        ++it;
-    }
-    if(it == eventos.end() || *it != evento) {
-        eventos.insert(it,evento);
-    }
-}
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QTableWidget, QTableWidgetItem, QPushButton, QMessageBox
+from components.dialogs.add import AddRecordDialog
+from components.dialogs.edit import EditRecordDialog
+
+class MainWindow(QWidget):
+    def __init__(self, postgres_conn, postgres_cursor):
+        super().__init__()
+        self.setWindowTitle("Gestión de Base de Datos PostgreSQL")
+        self.setGeometry(100, 100, 900, 600)
+
+        self.postgres_conn = postgres_conn
+        self.postgres_cursor = postgres_cursor
+
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        self.table_selector = QComboBox()
+        self.table_selector.currentTextChanged.connect(self.load_table_data)
+        main_layout.addWidget(self.table_selector)
+
+        self.table = QTableWidget()
+        main_layout.addWidget(self.table)
+
+        crud_layout = QHBoxLayout()
+
+        add_button = QPushButton("Agregar")
+        add_button.clicked.connect(self.add_record)
+        crud_layout.addWidget(add_button)
+
+        edit_button = QPushButton("Modificar")
+        edit_button.clicked.connect(self.edit_record)
+        crud_layout.addWidget(edit_button)
+
+        delete_button = QPushButton("Eliminar")
+        delete_button.clicked.connect(self.delete_record)
+        crud_layout.addWidget(delete_button)
+
+        main_layout.addLayout(crud_layout)
+
+        self.load_tables()
+
+    def load_tables(self):
+        try:
+            self.postgres_cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
+            tables = [row[0] for row in self.postgres_cursor.fetchall()]
+            self.table_selector.addItems(tables)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar las tablas: {e}")
+
+    def load_table_data(self, table_name):
+        try:
+            if not table_name:
+                return
+
+            self.postgres_cursor.execute(f"SELECT * FROM {table_name};")
+            rows = self.postgres_cursor.fetchall()
+            columns = [desc[0] for desc in self.postgres_cursor.description]
+
+            self.table.setRowCount(len(rows))
+            self.table.setColumnCount(len(columns))
+            self.table.setHorizontalHeaderLabels(columns)
+
+            for row_index, row in enumerate(rows):
+                for col_index, value in enumerate(row):
+                    self.table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar los datos de la tabla: {e}")
+
+    def add_record(self):
+        table_name = self.table_selector.currentText()
+        if not table_name:
+            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
+            return
+
+        dialog = AddRecordDialog(self, table_name, self.postgres_conn, self.postgres_cursor)
+        if dialog.exec():
+            self.load_table_data(table_name)
+
+    def edit_record(self):
+        table_name = self.table_selector.currentText()
+        if not table_name:
+            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
+            return
+
+        selected_row = self.table.currentRow()
+        if selected_row == -1:
+            QMessageBox.warning(self, "Error", "Selecciona un registro para modificar.")
+            return
+
+        try:
+            record_id = self.table.item(selected_row, 0).text()
+            if not record_id:
+                raise ValueError("El registro seleccionado no tiene un ID válido.")
+
+            dialog = EditRecordDialog(self, table_name, self.postgres_conn, self.postgres_cursor, record_id)
+            if dialog.exec():
+                self.load_table_data(table_name)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo abrir el diálogo de edición: {e}")
+
+    def delete_record(self):
+        """Eliminar el registro seleccionado."""
+        table_name = self.table_selector.currentText()
+        if not table_name:
+            QMessageBox.warning(self, "Error", "No hay ninguna tabla seleccionada.")
+            return
+
+        selected_row = self.table.currentRow()
+        if selected_row == -1:
+            QMessageBox.warning(self, "Error", "Selecciona un registro para eliminar.")
+            return
+
+        try:
+            record_id = self.table.item(selected_row, 0).text()
+            if not record_id:
+                raise ValueError("El registro seleccionado no tiene un ID válido.")
+
+            confirmation = QMessageBox.question(
+                self,
+                "Confirmación",
+                f"¿Seguro que deseas eliminar el registro con ID {record_id}?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+
+            if confirmation == QMessageBox.Yes:
+                self.postgres_cursor.execute(f"DELETE FROM {table_name} WHERE id = %s", (record_id,))
+                self.postgres_conn.commit()
+                QMessageBox.information(self, "Éxito", "Registro eliminado con éxito.")
+                self.load_table_data(table_name)
+        except Exception as e:
+            self.postgres_conn.rollback()
+            QMessageBox.critical(self, "Error", f"No se pudo eliminar el registro: {e}")
+
 ```
 
-Con esto ordeno los eventos en orden acendente como es requerido
 </details>
 
 <details>
-  <summary>imprimirFechas</summary>
+  <summary>db connect</summary>
 
-  ```cpp
-void imprimirFechas(const map<string, vector<string>>& fechas) {
-    for (const auto& par : fechas) {
-        cout << "Fecha: " << par.first << endl;
-        for (const auto& evento : par.second) {
-            cout << "  - " << evento << endl;
-        }
-        cout << "-----------------------------------" << endl;
-    }
-}
+  ```python
+from mysqlmigratorpostgresql import MysqlMigratorPostgresql
+
+def connect_mysql(migrator, host, port, user, password, database):
+    try:
+        migrator.connect_mysql(host, port, user, password, database)
+        print("Conexión a MySQL exitosa.")
+    except Exception as e:
+        raise Exception(f"Error al conectar a MySQL: {e}")
+
+def connect_postgresql(migrator, host, port, user, password, database):
+    try:
+        migrator.connect_postgresql(host, port, user, password, database)
+        print("Conexión a PostgreSQL exitosa.")
+    except Exception as e:
+        raise Exception(f"Error al conectar a PostgreSQL: {e}")
+
 ```
-
-Con esta funcion muestro las fechas en consola
 </details>
 
 <details>
-<summary>eliminarEvento</summary>
+<summary>migracion</summary>
 
-  ```cpp
-bool eliminarEvento(vector<string>& eventos, const string& evento) {
-    for (auto it = eventos.begin(); it != eventos.end(); ++it) {
-        if (*it == evento) {
-            eventos.erase(it);
-            return true;
-        }
-    }
-    return false;
-}
+  ```python
+def migrate_all_tables(migrator):
+    try:
+        migrator.migrate_all()
+        print("Migración completada con éxito.")
+    except Exception as e:
+        raise Exception(f"Error durante la migración: {e}")
+
 ```
-
-esta funcion de tipo booleana me permite eliminar los eventos la uso para los comandos de eliminacion
 </details>
 
 
