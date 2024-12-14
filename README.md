@@ -57,7 +57,7 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 1. **Clona el Repositorio:**
    ```bash
    git clone https://github.com/tu_usuario/ucb-program-1-database-1-finaltest.git
-   cd gestion_bd
+   cd ucb-program-1-database-1-finaltest
    ```
 
 2. **Instala las Dependencias:**
