@@ -1,4 +1,3 @@
-
 # Gestión y Migración de Bases de Datos con Python
 
 ## Descripción del Proyecto
@@ -92,6 +91,8 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 
 ### Esquema Normalizado
 
+![Diseño Relacional](https://media.discordapp.net/attachments/1313628387146731540/1317322820178673725/ConcesionariaFord_DB.png?ex=675e43fb&is=675cf27b&hm=0e061501db6f57a0ca17407d717a5f7a83bb410466aacf4a80b40b043a32791c&=&format=webp&quality=lossless)
+
 - El diseño cumple con la 3ra Forma Normal.
 - Las relaciones entre tablas son claras y bien definidas.
 - Ejemplo de esquema:
@@ -120,7 +121,7 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 ## Estructura del Proyecto
 
 ```plaintext
-
+gestion_bd/
 ├── app.py                   # Archivo principal
 ├── components/              # Componentes de la interfaz gráfica
 │   ├── login_form.py        # Formulario de conexión
@@ -148,12 +149,12 @@ Si deseas contribuir:
 
 ## Licencia
 
-Open Source be like
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
 
 ---
 
 ## Contacto
 
-Autor: [archenthusiastic , diegolew]  
-Correo: [abuawadsantiago@gmail.com]  
-GitHub: [https://github.com/archenthusiastic](https://github.com/archenthusiastic)
+Autor: [Tu Nombre]  
+Correo: [tu_email@example.com]  
+GitHub: [https://github.com/tu_usuario](https://github.com/tu_usuario)
