@@ -16,10 +16,11 @@ class AddRecordDialog(QDialog):
         form_layout = QFormLayout()
         layout.addLayout(form_layout)
 
+        # Obtener columnas excepto las seriales (id_auto)
         self.postgres_cursor.execute(f"""
             SELECT column_name, data_type 
             FROM information_schema.columns 
-            WHERE table_name = '{table_name}' AND table_schema = 'public';
+            WHERE table_name = '{table_name}' AND column_default IS NULL;
         """)
         columns = self.postgres_cursor.fetchall()
 
@@ -29,6 +30,7 @@ class AddRecordDialog(QDialog):
             form_layout.addRow(column_name, field)
             self.fields[column_name] = field
 
+        # Botones
         button_layout = QHBoxLayout()
         save_button = QPushButton("Guardar")
         save_button.clicked.connect(self.save_record)
@@ -50,7 +52,7 @@ class AddRecordDialog(QDialog):
             self.postgres_cursor.execute(sql, values)
             self.postgres_conn.commit()
 
-            QMessageBox.information(self, "Exito", "Registro agregado con exito.")
+            QMessageBox.information(self, "Éxito", "Registro agregado con éxito.")
             self.accept()
         except Exception as e:
             self.postgres_conn.rollback()
