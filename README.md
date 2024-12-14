@@ -94,7 +94,6 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 ![Diseño Relacional](https://media.discordapp.net/attachments/1313628387146731540/1317322820178673725/ConcesionariaFord_DB.png?ex=675e43fb&is=675cf27b&hm=0e061501db6f57a0ca17407d717a5f7a83bb410466aacf4a80b40b043a32791c&=&format=webp&quality=lossless)
 
 - El diseño cumple con la 3ra Forma Normal.
-- Las relaciones entre tablas son claras y bien definidas.
 
 - Un cliente puede tener múltiples ventas, pero una venta pertenece a un solo cliente.
 Autos y Ventas:
