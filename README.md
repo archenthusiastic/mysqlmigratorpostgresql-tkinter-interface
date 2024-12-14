@@ -141,6 +141,144 @@ gestion_bd/
 ├── requirements.txt         # Dependencias del proyecto
 ```
 
+
+<h4 align="center">Estructura</h2>
+
+  ```cpp
+  struct Fecha {
+    int anio;
+    int mes;
+    int dia;
+};
+  ```
+
+<h4 align="center">Funciones</h2>
+<details>
+<summary>Validar Fecha</summary>
+  
+  ```cpp
+bool validarFecha(int anio, int mes, int dia) {
+    if(anio == 0) {
+        cout << "Year value is invalid: " << anio << endl;
+        return false;
+    }
+    if(mes < 1 || mes > 12 )
+    {
+        cout << "Month value is invalid: "<< mes << endl;
+        return false;
+    }
+    if (dia < 1 || dia > 31) 
+    {
+        cout << "Day value is invalid: "<<dia<<endl;
+        return false;
+    }
+    if(mes == 2) 
+    {
+        if(dia > 29)
+        {
+            cout << "Day value is invalid: "<< dia << endl;
+            return false;
+        }
+    }
+    else if(mes == 4 || mes == 6 || mes == 9 || mes == 11) 
+    {
+        if(dia > 30) {
+            cout << "Day value is invalid: "<< dia << endl;
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+Basicamente mediante una funcion booleana dentro de funcionan agrego filtros en forma de sentencias que permiten detectar si una fecha no es valida es decir su formato es erroneo
+</details>
+
+<details>
+<summary>Contar Guiones</summary>
+
+  ```cpp
+int contarGuiones(const string& str) {
+    int count = 0;
+    for (char c : str) {
+        if (c == '-') {
+            count++;
+        }
+    }
+    return count;
+}
+```
+
+Esta funcion me permite asegurarme que la fecha siga el formato year-moth-day
+</details>
+
+<details>
+<summary>formatearFecha</summary>
+
+  ```cpp
+string formatearFecha(int anio, int mes, int dia) {
+    return to_string(anio) + "-" + (mes < 10 ? "0" : "") + to_string(mes) + "-" + (dia < 10 ? "0" : "") + to_string(dia);
+}
+```
+
+Esta funcion me permite agregar los 0 que faltan a la fecha
+</details>
+
+<details>
+  <summary>insertarEventoEnOrden</summary>
+
+  ```cpp
+void insertarEventoEnOrden(vector<string>& eventos, const string& evento) {
+    auto it = eventos.begin();
+    while (it != eventos.end() && *it < evento) {
+        ++it;
+    }
+    if(it == eventos.end() || *it != evento) {
+        eventos.insert(it,evento);
+    }
+}
+```
+
+Con esto ordeno los eventos en orden acendente como es requerido
+</details>
+
+<details>
+  <summary>imprimirFechas</summary>
+
+  ```cpp
+void imprimirFechas(const map<string, vector<string>>& fechas) {
+    for (const auto& par : fechas) {
+        cout << "Fecha: " << par.first << endl;
+        for (const auto& evento : par.second) {
+            cout << "  - " << evento << endl;
+        }
+        cout << "-----------------------------------" << endl;
+    }
+}
+```
+
+Con esta funcion muestro las fechas en consola
+</details>
+
+<details>
+<summary>eliminarEvento</summary>
+
+  ```cpp
+bool eliminarEvento(vector<string>& eventos, const string& evento) {
+    for (auto it = eventos.begin(); it != eventos.end(); ++it) {
+        if (*it == evento) {
+            eventos.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+esta funcion de tipo booleana me permite eliminar los eventos la uso para los comandos de eliminacion
+</details>
+
+
 ---
 
 ## Contribución
