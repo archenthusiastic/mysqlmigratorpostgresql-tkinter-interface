@@ -1,5 +1,3 @@
-# Gestión y Migración de Bases de Datos con Python
-
 ## Descripción del Proyecto
 
 Este proyecto consiste en la creación de una aplicación en Python que permite gestionar y migrar datos entre bases de datos **MySQL** y **PostgreSQL**. La solución está diseñada para modernizar sistemas heredados, facilitando la interacción con datos mediante una interfaz gráfica intuitiva. Adicionalmente, incluye funcionalidades CRUD (Crear, Leer, Actualizar y Eliminar) para gestionar los registros en ambas bases de datos.
