@@ -95,11 +95,6 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
 
 - El diseño cumple con la 3ra Forma Normal.
 - Las relaciones entre tablas son claras y bien definidas.
-- Ejemplo de esquema:
-  - **Tabla `usuarios`**
-    - `id` (INT, PK, AUTO_INCREMENT)
-    - `nombre` (VARCHAR)
-    - `correo` (VARCHAR, UNIQUE)
 
 ---
 
