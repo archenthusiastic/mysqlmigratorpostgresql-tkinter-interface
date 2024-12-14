@@ -162,7 +162,7 @@ if __name__ == "__main__":
     App().start()
   ```
 
-<h4 align="center">Funciones</h2>
+<h4 align="center">Estructura Funciones</h2>
 <details>
 <summary>edit</summary>
   
@@ -241,7 +241,7 @@ class EditRecordDialog(QDialog):
 </details>
 
 <details>
-<summary>Add</summary>
+<summary>add</summary>
 
   ```python
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QHBoxLayout, QMessageBox
