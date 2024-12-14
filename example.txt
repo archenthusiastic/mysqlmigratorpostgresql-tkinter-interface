@@ -1,0 +1,23 @@
+from mysqlmigratorpostgresql import MysqlMigratorPostgresql
+migrator = MysqlMigratorPostgresql()
+
+migrator.connect_mysql(
+    host="localhost",
+    port=3306,
+    user="root",
+    password="TU CONTRASE;A DE MYSQL", 
+    database="NOMBRE DE LA DB"
+)
+
+migrator.connect_postgresql(
+    host="localhost",
+    port=5432, 
+    user="postgres",
+    password="CONTRASE;A DE POSTGRE", 
+    database="NOMBRE DE LA DB DE POSTGRE"
+)
+
+migrator.migrate_all()
+
+
+migrator.close_connections()
