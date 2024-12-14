@@ -47,7 +47,7 @@ Este proyecto consiste en la creación de una aplicación en Python que permite 
   - `PySide6` (para la interfaz gráfica)
   - `mysql-connector-python` (para conexión MySQL)
   - `psycopg2` (para conexión PostgreSQL)
-  - - `mysqlmigratorpostgresql` (Migrar mysql a postgreSQL)
+  - `mysqlmigratorpostgresql` (Migrar mysql a postgreSQL)
 - **Gestores de Bases de Datos:**
   - MySQL
   - PostgreSQL
