@@ -631,7 +631,46 @@ def migrate_all_tables(migrator):
 ```
 </details>
 
+## Función `agregar_parentesis`
 
+La función `agregar_parentesis` recibe una lista de cadenas (nombres) y coloca paréntesis en el medio de cada una de las cadenas, dividiendo la longitud de la cadena por la mitad. Si la longitud de la cadena es par, el paréntesis se coloca justo en el medio; si es impar, se coloca un solo paréntesis en la parte central.
+
+### Parámetros:
+- `lista_nombres` (list): Una lista de cadenas (nombres) que serán modificadas con los paréntesis.
+
+### Retorno:
+- Devuelve una nueva lista de cadenas donde cada nombre tiene paréntesis insertados en su mitad.
+
+### Ejemplo:
+
+```python
+def agregar_parentesis(self, lista_nombres):
+    resultado_final = []
+    
+    for cadena in lista_nombres:
+        longitud = len(cadena)
+        resultado = []
+
+        mitad = longitud // 2
+
+        for i, char in enumerate(cadena):
+            if i < mitad:
+                if i > 0:
+                    resultado.append('(')
+                resultado.append(char)
+            elif longitud % 2 == 0 and i == mitad:
+                resultado.append(char)
+                resultado.append(')')
+            elif longitud % 2 == 0 and i == mitad + 1:
+                resultado.append(char)
+            else:
+                resultado.append(char)
+                if i < longitud - 1:
+                    resultado.append(')')
+
+        resultado_final.append(''.join(resultado))
+
+    return resultado_final
 ---
 
 ## Contribución
