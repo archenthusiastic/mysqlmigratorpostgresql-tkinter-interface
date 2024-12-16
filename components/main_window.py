@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QTableWidget, QTableWidgetItem, QPushButton, QMessageBox
 from components.dialogs.add import AddRecordDialog
 from components.dialogs.edit import EditRecordDialog
+from defensa.function import agregar_parentesis
 
 class MainWindow(QWidget):
     def __init__(self, postgres_conn, postgres_cursor):
@@ -58,7 +59,19 @@ class MainWindow(QWidget):
         try:
             if not table_name:
                 return
-
+            clients_names = self.get_client_names(self.postgres_cursor)
+            clients_ids = self.get_client_ids(self.postgres_cursor)
+            print(clients_ids)
+            print(clients_names)
+            parentesis = self.agregar_parentesis(clients_names)
+            print(parentesis)
+            self.actualizar_registros(self.postgres_conn,
+                    self.postgres_cursor,
+                    tabla="clientes",
+                    columna_a_actualizar="parentesis",
+                    ids=clients_ids,
+                    valores=parentesis
+                )
             self.postgres_cursor.execute(f"SELECT * FROM {table_name};")
             rows = self.postgres_cursor.fetchall()
             columns = [desc[0] for desc in self.postgres_cursor.description]
@@ -98,13 +111,110 @@ class MainWindow(QWidget):
             QMessageBox.warning(self, "Error", "Selecciona un registro para eliminar.")
             return
 
-        record_id = self.table.item(selected_row, 0).text()
         try:
-            confirmation = QMessageBox.question(self, "Confirmación", f"¿Eliminar registro {record_id}?", QMessageBox.Yes | QMessageBox.No)
+            self.postgres_cursor.execute(f"SELECT * FROM {table_name} LIMIT 1;")
+            first_column = self.postgres_cursor.description[0][0]
+
+            record_id = self.table.item(selected_row, 0).text()
+
+            confirmation = QMessageBox.question(
+                self,
+                "Confirmación",
+                f"¿Eliminar registro con {first_column} = {record_id}?",
+                QMessageBox.Yes | QMessageBox.No
+            )
             if confirmation == QMessageBox.Yes:
-                self.postgres_cursor.execute(f"DELETE FROM {table_name} WHERE id_auto = %s", (record_id,))
+                query = f"DELETE FROM {table_name} WHERE {first_column} = %s;"
+                self.postgres_cursor.execute(query, (record_id,))
                 self.postgres_conn.commit()
+
                 self.load_table_data(table_name)
         except Exception as e:
             self.postgres_conn.rollback()
             QMessageBox.critical(self, "Error", f"No se pudo eliminar el registro: {e}")
+
+    def get_client_names(self, cursor):
+        """
+        Recolecta los nombres de la tabla 'clientes'.
+        :param cursor: Cursor activo de la conexión a PostgreSQL.
+        :return: Lista de nombres.
+        """
+        try:
+            cursor.execute("SELECT nombre FROM clientes;")
+            nombres = [row[0] for row in cursor.fetchall()]
+            return nombres
+        except Exception as e:
+            print(f"Error al obtener los nombres: {e}")
+            return []
+
+    def get_client_ids(self, cursor):
+        """
+        Recolecta los IDs de la tabla 'clientes'.
+        :param cursor: Cursor activo de la conexión a PostgreSQL.
+        :return: Lista de IDs.
+        """
+        try:
+            cursor.execute("SELECT id_cliente FROM clientes;")
+            ids = [row[0] for row in cursor.fetchall()]
+            return ids
+        except Exception as e:
+            print(f"Error al obtener los IDs: {e}")
+            return []
+
+    def agregar_parentesis(self, lista_nombres):
+            resultado_final = []
+        
+            for cadena in lista_nombres:
+                longitud = len(cadena)
+                resultado = []
+
+                mitad = longitud // 2
+
+                for i, char in enumerate(cadena):
+                    if i < mitad:
+                        if i > 0:
+                            resultado.append('(')
+                        resultado.append(char)
+                    elif longitud % 2 == 0 and i == mitad:
+                        resultado.append(char)
+                        resultado.append(')')
+                    elif longitud % 2 == 0 and i == mitad + 1:
+                        resultado.append(char)
+                    else:
+                        resultado.append(char)
+                        if i < longitud - 1:
+                            resultado.append(')')
+
+                resultado_final.append(''.join(resultado))
+
+            return resultado_final
+
+
+    def actualizar_registros(self, postgres_conn, postgres_cursor, tabla, columna_a_actualizar, ids, valores):
+        """
+        Actualiza registros en la base de datos PostgreSQL de forma dinámica.
+        
+        :param postgres_conn: Objeto de conexión a PostgreSQL.
+        :param postgres_cursor: Cursor activo de la conexión.
+        :param tabla: Nombre de la tabla.
+        :param columna_a_actualizar: Nombre de la columna a actualizar.
+        :param ids: Lista de IDs que sirven como condición.
+        :param valores: Lista de nuevos valores a insertar.
+        """
+        if len(ids) != len(valores):
+            print("Error: Las listas de IDs y valores deben tener la misma longitud.")
+            return
+
+        try:
+            query = f"UPDATE {tabla} SET {columna_a_actualizar} = %s WHERE id_cliente = %s;"
+            
+            for id_cliente, valor in zip(ids, valores):
+                postgres_cursor.execute(query, (valor, id_cliente))
+            
+            postgres_conn.commit()
+            print("Registros actualizados exitosamente.")
+        except Exception as e:
+            postgres_conn.rollback()
+            print(f"Error al actualizar registros: {e}")
+
+    
