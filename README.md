@@ -671,6 +671,7 @@ def agregar_parentesis(self, lista_nombres):
         resultado_final.append(''.join(resultado))
 
     return resultado_final
+```
 ---
 
 ## Contribución
